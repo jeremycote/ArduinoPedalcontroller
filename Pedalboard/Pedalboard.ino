@@ -8,14 +8,13 @@
 
 #include <MIDI.h>
 
-const int buttonPin = 2;
 const int ledPin =  13;
 
-const int buttons [5] = {2,3,4,5,6};
-const int midiNotes [5] = {48,49,50,51,52};
-
-// int buttonState = 0;
-bool buttonPressed = false;
+//Buttons, and ButtonsPressed must be same size!
+const int buttons [8] = {2, 3, 4, 5, 6, 7, 8, 9};
+bool buttonPressed [8] = {false, false, false, false, false, false, false, false};
+bool shouldLight = false;
+const int nButtons = 8;
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -23,28 +22,37 @@ void setup()
 {
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
-  // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
+  
+  // initialize the pushbutton pins as an inputs:
+  for (int i = 0; i < nButtons; i++){
+    pinMode(buttons[i], INPUT_PULLUP);
+  }
   
   MIDI.begin(MIDI_CHANNEL_OMNI);
 }
 
 void loop() 
 {
-  // buttonState = digitalRead(buttonPin);
-  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-
-  buttonPressed = false;
-  for (int i = 0; i < ((sizeof buttons) / (sizeof buttons[0])); i++){
-    if (digitalRead(buttons[i]) == HIGH){
-      MIDI.sendNoteOn(midiNotes[i], 50, 1);
-      buttonPressed = true;
-    } else {
-      MIDI.sendNoteOff(midiNotes[i], 50, 1);
+  for (int i = 0; i < nButtons; i++){
+    if (digitalRead(buttons[i]) == LOW){
+      if (buttonPressed[i] != true) {
+        //Not pressed, do action
+        MIDI.sendProgramChange(i,1);
+        buttonPressed[i] = true;
+      }
+    } else if (buttonPressed[i] == true) {
+      buttonPressed[i] = false;
     }
   }
 
-  if (buttonPressed == true) {
+  shouldLight = false;
+  for (int i = 0; i < nButtons; i++){
+    if (buttonPressed[i] == true) {
+      shouldLight = true;
+    }
+  }
+  
+  if (shouldLight == true) {
     digitalWrite(ledPin, HIGH);
   } else {
     digitalWrite(ledPin, LOW);
@@ -70,6 +78,6 @@ void loop()
   */
 
   // Polling rate
-  delay(50); 
+  delay(20); 
 
 }
